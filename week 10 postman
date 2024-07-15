@@ -1,0 +1,69 @@
+const sqlite3 = require('sqlite3').verbose();
+
+function initializeDatabase() {
+    const db = new sqlite3.Database('./mydatabase.db', (err) => {
+        if (err) return console.error(err.message);
+        db.run(`CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            age INTEGER,
+            grade TEXT
+        );`);
+    });
+
+    process.on('exit', () => db.close((err) => {
+        if (err) console.error(err.message);
+    }));
+}
+
+module.exports = { initializeDatabase };
+appp.db
+const express = require('express');
+const sqlite3 = require('sqlite3');
+const { initializeDatabase } = require('./db');
+
+const app = express();
+const port = 3000;
+const db = new sqlite3.Database('./mydatabase.db', (err) => {
+    if (err) console.error(err.message);
+});
+
+app.use(express.json());
+
+app.route('/students')
+    .get((req, res) => {
+        db.all('SELECT * FROM students', [], (err, rows) => {
+            if (err) return console.error(err.message);
+            res.json(rows);
+        });
+    })
+    .post((req, res) => {
+        const { name, age, grade } = req.body;
+        db.run('INSERT INTO students (name, age, grade) VALUES (?, ?, ?)', [name, age, grade], function (err) {
+            if (err) return console.error(err.message);
+            res.status(201).json({ id: this.lastID });
+        });
+    });
+
+app.route('/students/:id')
+    .get((req, res) => {
+        db.get('SELECT * FROM students WHERE id = ?', [req.params.id], (err, row) => {
+            if (err) return console.error(err.message);
+            res.json(row);
+        });
+    })
+    .put((req, res) => {
+        const { name, age, grade } = req.body;
+        db.run('UPDATE students SET name = ?, age = ?, grade = ? WHERE id = ?', [name, age, grade, req.params.id], function (err) {
+            if (err) return console.error(err.message);
+            res.json({ updatedID: req.params.id });
+        });
+    })
+    .delete((req, res) => {
+        db.run('DELETE FROM students WHERE id = ?', [req.params.id], function (err) {
+            if (err) return console.error(err.message);
+            res.json({ deletedID: req.params.id });
+        });
+    });
+
+app.listen(port, () => console.log(Server running at http://localhost:${port}));
